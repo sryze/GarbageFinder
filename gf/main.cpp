@@ -41,10 +41,10 @@ void GetLogicalDrives(std::vector<std::wstring> &drives) {
 
 std::string FormtSize(std::int64_t size) {
     static std::vector<std::pair<std::int64_t, const char *>> units = {
-        {1LL << 40, "TiB"},
-        {1LL << 30, "GiB"},
-        {1LL << 20, "MiB"},
-        {1LL << 10, "KiB"}
+        {1LL << 40, "TB"},
+        {1LL << 30, "GB"},
+        {1LL << 20, "MB"},
+        {1LL << 10, "KB"}
     };
     for (auto [unitSize, suffix] : units) {
         if (size >= unitSize) {
@@ -106,8 +106,7 @@ int main() {
         << "Done (" << durationInSeconds.count() << " seconds)"
         << std::endl
         << std::endl
-        << "Total size: " << FormtSizeMetric(tree->Size())
-                          << " (" << FormtSize(tree->Size()) << ")"
+        << "Total size: " << FormtSize(tree->Size())
         << std::endl;
 
 	return 0;
