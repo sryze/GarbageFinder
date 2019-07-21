@@ -18,7 +18,7 @@ endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOUIC OFF)
 
 set(HEADERS
   mainwindow.h
@@ -29,16 +29,9 @@ set(SOURCES
   mainwindow.cpp
 )
 
-set(UI_SOURCES
-  mainwindow.ui
-)
-
-qt5_wrap_ui(UI_HEADERS ${UI_SOURCES})
-
 add_executable(GarbageFinder
   ${SOURCES}
   ${HEADERS}
-  ${UI_HEADERS}
   ${EMBEDDED_RESOURCES}
   ${RESORUCES}
 )
