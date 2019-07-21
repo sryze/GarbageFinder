@@ -39,8 +39,29 @@ void GetLogicalDrives(std::vector<std::wstring> &drives) {
 	}
 }
 
-std::string FormtSize(std::int64_t size) {
-    static std::vector<std::pair<std::int64_t, const char *>> units = {
+bool GetFreeDiskSpace(const std::wstring &rootPath,
+                      std::int64_t &numberOfBytesFree,
+                      std::int64_t &totalSizeInBytes) {
+    DWORD sectorsPerCluster;
+    DWORD bytesPerSector;
+    DWORD freeClusterCount;
+    DWORD totalClusterCount;
+    if (GetDiskFreeSpaceW(rootPath.c_str(),
+                          &sectorsPerCluster,
+                          &bytesPerSector,
+                          &freeClusterCount,
+                          &totalClusterCount)) {
+        auto bytesPerClster =
+            bytesPerSector * static_cast<std::int64_t>(sectorsPerCluster);
+        numberOfBytesFree = bytesPerClster * freeClusterCount;
+        totalSizeInBytes = bytesPerClster * totalClusterCount;
+        return true;   
+    }
+    return false;
+}
+
+std::string FormatSize(std::int64_t size) {
+    static const std::vector<std::pair<std::int64_t, const char *>> units = {
         {1LL << 40, "TB"},
         {1LL << 30, "GB"},
         {1LL << 20, "MB"},
@@ -58,7 +79,7 @@ std::string FormtSize(std::int64_t size) {
 }
 
 std::string FormtSizeMetric(std::int64_t size) {
-    static std::vector<std::pair<std::int64_t, const char *>> units = {
+    static const std::vector<std::pair<std::int64_t, const char *>> units = {
         {1'000'000'000'000LL, "TB"},
         {1'000'000'000LL, "GB"},
         {1'000'000LL, "MB"},
@@ -84,7 +105,16 @@ int main() {
 	int driveNumber = 0;
 	for (;;) {
 		for (std::size_t i = 0; i < drives.size(); i++) {
-			std::wcout << i + 1 << ". " << drives[i] << std::endl;
+            auto &drivePath = drives[i];
+			std::wcout << i + 1 << ". " << drivePath;
+            std::int64_t free, total;
+            if (GetFreeDiskSpace(drivePath, free, total)) {
+                std::cout << " ("
+                          << FormatSize(total)
+                          << " / "
+                          << FormatSize(free) << " free)";
+            }
+            std::wcout << std::endl;
 		}
 		std::cout << "Choose a logical drive to analyze: ";
 		std::cin >> driveNumber;
@@ -106,7 +136,7 @@ int main() {
         << "Done (" << durationInSeconds.count() << " seconds)"
         << std::endl
         << std::endl
-        << "Total size: " << FormtSize(tree->Size())
+        << "Total size: " << FormatSize(tree->Size())
         << std::endl;
 
 	return 0;
