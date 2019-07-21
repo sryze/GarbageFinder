@@ -102,6 +102,8 @@ int main() {
 	std::vector<std::wstring> drives;
 	GetLogicalDrives(drives);
 
+    std::cout << "Welcome to GarbageFinder!\n\n";
+
 	int driveNumber = 0;
 	for (;;) {
 		for (std::size_t i = 0; i < drives.size(); i++) {
@@ -116,7 +118,7 @@ int main() {
             }
             std::wcout << std::endl;
 		}
-		std::cout << "Choose a logical drive to analyze: ";
+		std::cout << "Choose a drive to analyze (type its number): ";
 		std::cin >> driveNumber;
 		std::cout << std::endl;
 		if (driveNumber > 0 && driveNumber <= drives.size()) {
