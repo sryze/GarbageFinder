@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <chrono>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -104,7 +106,7 @@ int main() {
 
     std::cout << "Welcome to GarbageFinder!\n\n";
 
-    int driveNumber = 0;
+    std::wstring target;
     for (;;) {
         for (std::size_t i = 0; i < drives.size(); i++) {
             auto &drivePath = drives[i];
@@ -118,20 +120,28 @@ int main() {
             }
             std::wcout << std::endl;
         }
-        std::cout << "Choose a drive to analyze (type a number): ";
-        std::cin >> driveNumber;
+        std::cout << "Choose a drive or directory to analyze: ";
+        std::wcin >> target;
         std::cout << std::endl;
-        if (driveNumber > 0
-            && driveNumber <= static_cast<int>(drives.size())) {
+        if (std::all_of(target.begin(), target.end(), ::isdigit)) {
+            int driveNumber = std::stoi(target, nullptr);
+            if (driveNumber > 0
+                && driveNumber <= static_cast<int>(drives.size())) {
+                target = drives[driveNumber - 1];
+                break;
+            }
+        } else if (std::filesystem::is_directory(target)) {
             break;
+        } else {
+            std::cout << "This doesn't look like a valid path"
+                      << std::endl << std::endl;
         }
     }
 
-    const std::wstring &selectedDrive = drives[driveNumber - 1];
-    std::wcout << L"Analyzing " << selectedDrive << " ... ";
-
+    std::wcout << L"Analyzing " << target << " ... ";
     auto startTime = std::chrono::system_clock::now();
-    auto tree = gf::BuildFileTree(selectedDrive);
+
+    auto tree = gf::BuildFileTree(target);
 
     auto durationInSeconds = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::system_clock::now() - startTime);
