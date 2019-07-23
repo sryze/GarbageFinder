@@ -118,7 +118,7 @@ int main() {
             }
             std::wcout << std::endl;
         }
-        std::cout << "Choose a drive to analyze (type its number): ";
+        std::cout << "Choose a drive to analyze (type a number): ";
         std::cin >> driveNumber;
         std::cout << std::endl;
         if (driveNumber > 0 && driveNumber <= drives.size()) {
