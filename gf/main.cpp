@@ -12,31 +12,31 @@
 namespace {
 
 void GetLogicalDrives(std::vector<std::wstring> &drives) {
-	std::vector<wchar_t> buffer;
-	buffer.resize(256);
-	
-	for (;;) {
-		auto result = GetLogicalDriveStringsW(
-			static_cast<DWORD>(buffer.capacity() / sizeof(wchar_t)),
-			buffer.data());
-		if (result <= buffer.capacity()) {
-			break;
-		}
-		buffer.resize(buffer.capacity() * 2);
-	}
+    std::vector<wchar_t> buffer;
+    buffer.resize(256);
+    
+    for (;;) {
+        auto result = GetLogicalDriveStringsW(
+            static_cast<DWORD>(buffer.capacity() / sizeof(wchar_t)),
+            buffer.data());
+        if (result <= buffer.capacity()) {
+            break;
+        }
+        buffer.resize(buffer.capacity() * 2);
+    }
 
-	std::wstring current;
+    std::wstring current;
 
-	for (auto &c : buffer) {
-		if (c == '\0') {
-			if (!current.empty()) {
-				drives.push_back(current);
-			}
-			current = L"";
-		} else {
-			current.push_back(c);
-		}
-	}
+    for (auto &c : buffer) {
+        if (c == '\0') {
+            if (!current.empty()) {
+                drives.push_back(current);
+            }
+            current = L"";
+        } else {
+            current.push_back(c);
+        }
+    }
 }
 
 bool GetFreeDiskSpace(const std::wstring &rootPath,
@@ -99,16 +99,16 @@ std::string FormtSizeMetric(std::int64_t size) {
 } // anonymous namespace
 
 int main() {
-	std::vector<std::wstring> drives;
-	GetLogicalDrives(drives);
+    std::vector<std::wstring> drives;
+    GetLogicalDrives(drives);
 
     std::cout << "Welcome to GarbageFinder!\n\n";
 
-	int driveNumber = 0;
-	for (;;) {
-		for (std::size_t i = 0; i < drives.size(); i++) {
+    int driveNumber = 0;
+    for (;;) {
+        for (std::size_t i = 0; i < drives.size(); i++) {
             auto &drivePath = drives[i];
-			std::wcout << i + 1 << ". " << drivePath;
+            std::wcout << i + 1 << ". " << drivePath;
             std::int64_t free, total;
             if (GetFreeDiskSpace(drivePath, free, total)) {
                 std::cout << " ("
@@ -117,20 +117,20 @@ int main() {
                           << FormatSize(free) << " free)";
             }
             std::wcout << std::endl;
-		}
-		std::cout << "Choose a drive to analyze (type its number): ";
-		std::cin >> driveNumber;
-		std::cout << std::endl;
-		if (driveNumber > 0 && driveNumber <= drives.size()) {
-			break;
-		}
-	}
+        }
+        std::cout << "Choose a drive to analyze (type its number): ";
+        std::cin >> driveNumber;
+        std::cout << std::endl;
+        if (driveNumber > 0 && driveNumber <= drives.size()) {
+            break;
+        }
+    }
 
     const std::wstring &selectedDrive = drives[driveNumber - 1];
-	std::wcout << L"Analyzing " << selectedDrive << " ... ";
+    std::wcout << L"Analyzing " << selectedDrive << " ... ";
 
     auto startTime = std::chrono::system_clock::now();
-	auto tree = gf::BuildFileTree(selectedDrive);
+    auto tree = gf::BuildFileTree(selectedDrive);
 
     auto durationInSeconds = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::system_clock::now() - startTime);
@@ -141,5 +141,5 @@ int main() {
         << "Total size: " << FormatSize(tree->Size())
         << std::endl;
 
-	return 0;
+    return 0;
 }

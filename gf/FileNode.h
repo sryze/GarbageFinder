@@ -20,14 +20,14 @@ enum class FileType
 class FileNode 
 {
 public:
-	FileNode(FileType type, std::wstring name, std::int64_t size);
+    FileNode(FileType type, std::wstring name, std::int64_t size);
 
     FileType Type() const;
     std::wstring Name() const;
     std::int64_t Size() const;
     void SetSize(std::int64_t size);
 
-	bool AddChildNode(std::shared_ptr<FileNode> node);
+    bool AddChildNode(std::shared_ptr<FileNode> node);
     void ForEachChildNode(
         const std::function<bool(std::shared_ptr<FileNode>)> &func) const;
 
@@ -52,9 +52,9 @@ private:
     };
 
     FileType type_;
-	std::wstring name_;
+    std::wstring name_;
     std::int64_t size_;
-	std::set<
+    std::set<
         std::shared_ptr<FileNode>,
         Comparator> childNodes_;
 };
