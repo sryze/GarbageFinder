@@ -8,9 +8,10 @@ namespace gf {
 
 class FileNode;
 
+constexpr auto DefaultMaxFileTreeDepth = 128;
+
 std::shared_ptr<FileNode> BuildFileTree(
-    const std::wstring &rootPath,
-    int maxDepth = std::numeric_limits<int>::max());
+    const std::wstring &rootPath, int maxDepth = DefaultMaxFileTreeDepth);
 
 } // namespace gf
 

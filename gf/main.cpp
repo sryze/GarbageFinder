@@ -126,7 +126,7 @@ int main() {
 		}
 	}
 
-    std::wstring selectedDrive = drives[driveNumber - 1];
+    const std::wstring &selectedDrive = drives[driveNumber - 1];
 	std::wcout << L"Analyzing " << selectedDrive << " ... ";
 
     auto startTime = std::chrono::system_clock::now();
