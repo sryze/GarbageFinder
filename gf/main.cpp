@@ -121,7 +121,8 @@ int main() {
         std::cout << "Choose a drive to analyze (type a number): ";
         std::cin >> driveNumber;
         std::cout << std::endl;
-        if (driveNumber > 0 && driveNumber <= drives.size()) {
+        if (driveNumber > 0
+            && driveNumber <= static_cast<int>(drives.size())) {
             break;
         }
     }
