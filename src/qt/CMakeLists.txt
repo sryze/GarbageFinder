@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 cmake_policy(SET CMP0048 NEW)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 project(GarbageFinderQt VERSION 0.1.0 LANGUAGES CXX)
 
 list(APPEND
