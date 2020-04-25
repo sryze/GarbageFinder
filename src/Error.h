@@ -6,6 +6,7 @@
 namespace gf {
 
 enum class ErrorDomain {
+    Unknown,
 #ifdef _WIN32
     Win32,
 #endif
@@ -16,15 +17,17 @@ class Error
 {
 public:
     Error():
+        domain(ErrorDomain::Unknown),
         code(0)
     {}
 
     Error(ErrorDomain domain, int code):
+        domain(ErrorDomain::Unknown),
         code(code)
     {}
 
-    operator bool() const {
-        return code == 0;
+    operator int() const {
+        return code;
     }
 
     ErrorDomain Domain() const {

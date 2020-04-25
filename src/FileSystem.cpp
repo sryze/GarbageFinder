@@ -1,4 +1,3 @@
-#include <string_view>
 #ifdef _WIN32
     #include <windows.h>
     #define stat _stat
@@ -7,14 +6,127 @@
 #else
     #include <sys/types.h>
     #include <sys/stat.h>
+    #ifdef __linux__
+        #include <sys/vfs.h>
+    #endif
     #include <dirent.h>
     #include <unistd.h>
 #endif
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <vector>
 #include "Error.h"
 #include "FileNode.h"
 #include "FileSystem.h"
 
 namespace gf {
+
+#if defined _WIN32
+
+void GetMountedVolumes(std::vector<std::string> &volumes) {
+    std::vector<char> buffer;
+    buffer.resize(256);
+
+    for (;;) {
+        auto result = GetLogicalDriveStringsA(
+            static_cast<DWORD>(buffer.capacity() / sizeof(wchar_t)),
+            buffer.data());
+        if (result <= buffer.capacity()) {
+            break;
+        }
+        buffer.resize(buffer.capacity() * 2);
+    }
+
+    std::string current;
+
+    for (auto &c : buffer) {
+        if (c == '\0') {
+            if (!current.empty()) {
+                volumes.push_back(current);
+            }
+            current = "";
+        } else {
+            current.push_back(c);
+        }
+    }
+}
+
+bool GetVolumeFreeSpace(const std::string &path,
+                        std::int64_t &free,
+                        std::int64_t &total) {
+    DWORD sectorsPerCluster;
+    DWORD bytesPerSector;
+    DWORD freeClusterCount;
+    DWORD totalClusterCount;
+    if (GetDiskFreeSpaceA(path.c_str(),
+                          &sectorsPerCluster,
+                          &bytesPerSector,
+                          &freeClusterCount,
+                          &totalClusterCount)) {
+        auto bytesPerClster =
+            bytesPerSector * static_cast<std::int64_t>(sectorsPerCluster);
+        free = bytesPerClster * freeClusterCount;
+        total = bytesPerClster * totalClusterCount;
+        return true;
+    }
+    return false;
+}
+
+#elif defined __linux__
+
+void GetMountedVolumes(std::vector<std::string> &volumes) {
+    std::ifstream procvolumesStream("/proc/volumes");
+    std::string line;
+
+    while (std::getline(procvolumesStream, line)) {
+        if (line.find("#blocks") != std::string::npos) {
+            continue;
+        }
+        if (line.length() == 0) {
+            continue;
+        }
+
+        auto whitespace = " \t";
+        auto majorPos = line.find_first_not_of(whitespace);
+        if (majorPos == std::string::npos) {
+            continue;
+        }
+        auto minorPos = line.find_first_not_of(
+            whitespace, line.find_first_of(whitespace, majorPos));
+        if (minorPos == std::string::npos) {
+            continue;
+        }
+        auto numBlocksPos = line.find_first_not_of(
+            whitespace, line.find_first_of(whitespace, minorPos));
+        if (numBlocksPos == std::string::npos) {
+            continue;
+        }
+        auto namePos = line.find_first_not_of(
+            whitespace, line.find_first_of(whitespace, numBlocksPos));
+        if (namePos == std::string::npos) {
+            continue;
+        }
+
+        auto deviceName = line.substr(namePos);
+        auto devicePath = "/dev/" + deviceName;
+
+        struct statfs fsInfo;
+        if (statfs(devicePath.c_str(), &fsInfo) < 0) {
+            continue;
+        }
+
+        volumes.push_back(devicePath);
+    }
+}
+
+bool GetVolumeFreeSpace(const std::string &path,
+                        std::int64_t &free,
+                        std::int64_t &total) {
+    return false;
+}
+
+#endif
 
 FileType GetFileType(const std::string &path, Error &error) {
     struct stat fileInfo;
@@ -98,9 +210,9 @@ void WalkDirectory(const std::string &path,
 
 #endif // _WIN32
 
-void BuildFileTreeInternal(std::shared_ptr<FileNode> root,
-                           const std::string &rootPath,
-                           int maxDepth) {
+void ReadFileTreeInternal(std::shared_ptr<FileNode> root,
+                          const std::string &rootPath,
+                          int maxDepth) {
     if (maxDepth == 0) {
         return;
     }
@@ -122,7 +234,7 @@ void BuildFileTreeInternal(std::shared_ptr<FileNode> root,
     ](std::shared_ptr<FileNode> node) {
         if (node->Type() == FileType::Directory) {
             auto path = (rootPath + "\\") + node->Name();
-            BuildFileTreeInternal(node, path, maxDepth - 1);
+            ReadFileTreeInternal(node, path, maxDepth - 1);
         }
         totalSize += node->Size();
         return true;
@@ -133,12 +245,51 @@ void BuildFileTreeInternal(std::shared_ptr<FileNode> root,
 
 } // anonymous namespace
 
-std::shared_ptr<FileNode> BuildFileTree(const std::string &rootPath,
-                                        int maxDepth) {
+std::shared_ptr<FileNode> ReadFileTree(const std::string &path, int maxDepth) {
     auto rootNode =
-        std::make_shared<FileNode>(FileType::Directory, rootPath, 0);
-    BuildFileTreeInternal(rootNode, rootPath, maxDepth);
+        std::make_shared<FileNode>(FileType::Directory, path, 0);
+    ReadFileTreeInternal(rootNode, path, maxDepth);
     return rootNode;
+}
+
+std::string FormatSize(std::int64_t size) {
+    static const std::vector<std::pair<std::int64_t, const char*>> units = {
+        {1LL << 40, "TB"},
+        {1LL << 30, "GB"},
+        {1LL << 20, "MB"},
+        {1LL << 10, "KB"}
+    };
+    for (auto p : units) {
+        auto unitSize = p.first;
+        if (size >= unitSize) {
+            auto countX10 = size * 10 / unitSize;
+            auto stream = std::ostringstream{};
+            auto suffix = p.second;
+            stream << countX10 / 10 << "." << countX10 % 10 << " " << suffix;
+            return stream.str();
+        }
+    }
+    return std::to_string(size) + " bytes";
+}
+
+std::string FormtSizeMetric(std::int64_t size) {
+    static const std::vector<std::pair<std::int64_t, const char*>> units = {
+        {1000000000000LL, "TB"},
+        {1000000000LL, "GB"},
+        {1000000LL, "MB"},
+        {1000LL, "KB"}
+    };
+    for (auto p : units) {
+        auto unitSize = p.first;
+        if (size >= unitSize) {
+            auto countX10 = size * 10 / unitSize;
+            auto stream = std::ostringstream{};
+            auto suffix = p.second;
+            stream << countX10 / 10 << "." << countX10 % 10 << " " << suffix;
+            return stream.str();
+        }
+    }
+    return std::to_string(size) + " bytes";
 }
 
 } // namespace gf

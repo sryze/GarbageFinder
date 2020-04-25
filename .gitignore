@@ -1,6 +1,6 @@
 .vs
 .vscode
-build
+build*
 *.pro.user*
 CMakeLists.txt.user*
 CMakeSettings.json

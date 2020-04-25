@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.0)
 cmake_policy(SET CMP0048 NEW)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -15,7 +15,10 @@ add_executable(GarbageFinder
     main.cpp
 )
 
-target_compile_features(GarbageFinder PRIVATE cxx_std_11)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
+   CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
 
 iF(WIN32)
     target_compile_definitions(GarbageFinder PRIVATE -DNOMINMAX -DWIN32_LEAN_AND_MEAN)
