@@ -18,7 +18,6 @@ std::string Error::Message() const {
             #else
                 strerror_r(code, &buf[0], buf.capacity());
             #endif
-            
             return buf;
     }
     return std::string();

@@ -44,7 +44,8 @@ int main() {
         std::cin >> target;
         std::cout << std::endl;
         if (std::all_of(target.begin(), target.end(), ::isdigit)) {
-            auto volumeIndex = static_cast<std::size_t>(std::stoi(target, nullptr));
+            auto volumeIndex =
+                static_cast<std::size_t>(std::stoi(target, nullptr));
             if (volumeIndex > 0 && volumeIndex <= volumes.size()) {
                 target = volumes[volumeIndex - 1];
                 break;
@@ -53,7 +54,9 @@ int main() {
             Error error;
             auto type = GetFileType(target, error);
             if (error) {
-                std::cout << "Error " << error.Code() << ": " + error.Message() << std::endl;
+                std::cout << "Error "
+                          << error.Code() << ": " + error.Message()
+                          << std::endl;
                 continue;
             }
             if (type == FileType::Directory) {
