@@ -6,12 +6,14 @@ project(gf VERSION 0.1.0 LANGUAGES CXX)
 add_executable(gf
     FileNode.cpp
     FileNode.h
-    FileTree.cpp
-    FileTree.h
+    FileSystem.cpp
+    FileSystem.h
+    Error.cpp
+    Error.h
     main.cpp
 )
 
-target_compile_features(gf PRIVATE cxx_std_17)
+target_compile_features(gf PRIVATE cxx_std_11)
 
 iF(WIN32)
     target_compile_definitions(gf PRIVATE -DNOMINMAX -DWIN32_LEAN_AND_MEAN)

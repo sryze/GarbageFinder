@@ -17,13 +17,13 @@ enum class FileType
     Link
 };
 
-class FileNode 
+class FileNode
 {
 public:
-    FileNode(FileType type, std::wstring name, std::int64_t size);
+    FileNode(FileType type, std::string name, std::int64_t size);
 
     FileType Type() const;
-    std::wstring Name() const;
+    std::string Name() const;
     std::int64_t Size() const;
     void SetSize(std::int64_t size);
 
@@ -37,7 +37,7 @@ private:
     public:
         std::size_t operator()(const std::shared_ptr<FileNode> &node) const
         {
-            return std::hash<std::wstring>()(node->name_);
+            return std::hash<std::string>()(node->name_);
         }
     };
 
@@ -52,7 +52,7 @@ private:
     };
 
     FileType type_;
-    std::wstring name_;
+    std::string name_;
     std::int64_t size_;
     std::set<
         std::shared_ptr<FileNode>,

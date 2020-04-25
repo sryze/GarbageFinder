@@ -2,7 +2,7 @@
 
 namespace gf {
 
-FileNode::FileNode(FileType type, std::wstring name, std::int64_t size):
+FileNode::FileNode(FileType type, std::string name, std::int64_t size):
     type_(type), name_(name), size_(size)
 {
 }
@@ -11,7 +11,7 @@ FileType FileNode::Type() const {
     return type_;
 }
 
-std::wstring FileNode::Name() const {
+std::string FileNode::Name() const {
     return name_;
 }
 
