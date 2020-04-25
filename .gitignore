@@ -2,4 +2,5 @@
 .vscode
 build
 *.pro.user*
+CMakeLists.txt.user*
 CMakeSettings.json
