@@ -207,7 +207,7 @@ void WalkDirectory(const std::string &path,
         } else {
             type = FileType::File;
         }
-        callback(name, type, size);
+        callback(Error::Success(), name, type, size);
 
         foundNext = FindNextFileA(findHandle, &findData);
     } while (foundNext);
