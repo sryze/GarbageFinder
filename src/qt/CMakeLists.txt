@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 cmake_policy(SET CMP0048 NEW)
 
-project(GarbageFinder VERSION 0.1.0 LANGUAGES CXX)
+project(GarbageFinderQt VERSION 0.1.0 LANGUAGES CXX)
 
 list(APPEND
      CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -29,24 +29,24 @@ set(SOURCES
   mainwindow.cpp
 )
 
-add_executable(GarbageFinder
+add_executable(GarbageFinderQt
   ${SOURCES}
   ${HEADERS}
   ${EMBEDDED_RESOURCES}
   ${RESORUCES}
 )
 
-target_link_libraries(GarbageFinder
+target_link_libraries(GarbageFinderQt
   Qt5::Core
   Qt5::Widgets
 )
 
 if(WIN32)
   if(MSVC)
-    set_property(TARGET GarbageFinder APPEND_STRING PROPERTY
+    set_property(TARGET GarbageFinderQt APPEND_STRING PROPERTY
                  LINK_FLAGS " /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
   elseif(MINGW)
-    set_property(TARGET GarbageFinder APPEND_STRING PROPERTY
+    set_property(TARGET GarbageFinderQt APPEND_STRING PROPERTY
                  LINK_FLAGS " -Wl,-subsystem,windows")
   endif()
 endif()
