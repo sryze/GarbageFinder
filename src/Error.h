@@ -10,7 +10,7 @@ enum class ErrorDomain {
 #ifdef _WIN32
     Win32,
 #endif
-    System
+    Errno
 };
 
 class Error
@@ -25,6 +25,10 @@ public:
         domain(ErrorDomain::Unknown),
         code(code)
     {}
+
+    static Error Success() {
+        return success;
+    }
 
     operator int() const {
         return code;
@@ -43,6 +47,9 @@ public:
 private:
     ErrorDomain domain;
     int code;
+
+private:
+    static Error success;
 };
 
 } // namspace gf

@@ -4,28 +4,22 @@
 #include <set>
 #include <string>
 #include <vector>
+#include "FileInfo.h"
 
 #ifndef GF_FILE_NODE_H
 #define GF_FILE_NODE_H
 
 namespace gf {
 
-enum class FileType
-{
-    File,
-    Directory,
-    Link
-};
-
 class FileNode
 {
 public:
-    FileNode(FileType type, std::string name, std::int64_t size);
+    FileNode(FileType type, std::string name, FileSize size);
 
-    FileType Type() const;
     std::string Name() const;
-    std::int64_t Size() const;
-    void SetSize(std::int64_t size);
+    FileType Type() const;
+    FileSize Size() const;
+    void SetSize(FileSize size);
 
     bool AddChildNode(std::shared_ptr<FileNode> node);
     void ForEachChildNode(
@@ -51,9 +45,9 @@ private:
         }
     };
 
-    FileType type_;
     std::string name_;
-    std::int64_t size_;
+    FileType type_;
+    FileSize size_;
     std::set<
         std::shared_ptr<FileNode>,
         Comparator> childNodes_;

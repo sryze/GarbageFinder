@@ -25,7 +25,7 @@ int main() {
         for (std::size_t i = 0; i < volumes.size(); i++) {
             auto &path = volumes[i];
             std::cout << i + 1 << ". " << path;
-            std::int64_t free, total;
+            FileSize free, total;
             if (GetVolumeFreeSpace(path, free, total)) {
                 std::cout << " ("
                           << FormatSize(total)

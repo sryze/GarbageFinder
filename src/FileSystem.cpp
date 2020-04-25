@@ -3,6 +3,7 @@
     #define stat _stat
     #define S_ISDIR(mode) ((_S_IFDIR & mode) != 0)
     #define S_ISLNK(mode) ((_S_IFLNK & mode) != 0)
+    #define DIR_SEPARATOR "\\"
 #else
     #include <sys/types.h>
     #include <sys/stat.h>
@@ -11,6 +12,7 @@
     #endif
     #include <dirent.h>
     #include <unistd.h>
+    #define DIR_SEPARATOR "/"
 #endif
 #include <fstream>
 #include <string>
@@ -76,10 +78,10 @@ bool GetVolumeFreeSpace(const std::string &path,
 #elif defined __linux__
 
 void GetMountedVolumes(std::vector<std::string> &volumes) {
-    std::ifstream procvolumesStream("/proc/volumes");
+    std::ifstream procVolumesStream("/proc/volumes");
     std::string line;
 
-    while (std::getline(procvolumesStream, line)) {
+    while (std::getline(procVolumesStream, line)) {
         if (line.find("#blocks") != std::string::npos) {
             continue;
         }
@@ -121,34 +123,50 @@ void GetMountedVolumes(std::vector<std::string> &volumes) {
 }
 
 bool GetVolumeFreeSpace(const std::string &path,
-                        std::int64_t &free,
-                        std::int64_t &total) {
+                        FileSize &free,
+                        FileSize &total) {
     return false;
 }
 
 #endif
 
-FileType GetFileType(const std::string &path, Error &error) {
-    struct stat fileInfo;
-    if (stat(path.c_str(), &fileInfo) < 0) {
-        error = Error(ErrorDomain::System, errno);
-        return FileType::File;
+FileInfo GetFileInfo(const std::string &path, Error &error) {
+    FileInfo fileInfo;
+    fileInfo.type = FileType::File;
+    fileInfo.size = 0;
+
+    struct stat fileStat;
+    if (stat(path.c_str(), &fileStat) < 0) {
+        error = Error(ErrorDomain::Errno, errno);
+        return fileInfo;
     }
-    if (S_ISDIR(fileInfo.st_mode)) {
-        return FileType::Directory;
+
+    if (S_ISDIR(fileStat.st_mode)) {
+        fileInfo.type = FileType::Directory;
     }
 #ifdef _WIN32
     DWORD attributes = GetFileAttributesA(path.c_str());
     if (attributes == INVALID_FILE_ATTRIBUTES) {
         error = Error(ErrorDomain::Win32, GetLastError());
-        return FileType::File;
+        return fileInfo;
     }
 #else
-    if (S_ISLNK(fileInfo.st_mode)) {
-        return FileType::Link;
+    if (S_ISLNK(fileStat.st_mode)) {
+        fileInfo.type =  FileType::Link;
     }
 #endif
-    return FileType::File;
+
+    fileInfo.size = static_cast<FileSize>(fileStat.st_size);
+
+    return fileInfo;
+}
+
+FileType GetFileType(const std::string &path, Error &error) {
+    FileInfo fileInfo = GetFileInfo(path, error);
+    if (error) {
+        return FileType::File;
+    }
+    return fileInfo.type;
 }
 
 namespace {
@@ -157,9 +175,10 @@ namespace {
 
 void WalkDirectory(const std::string &path,
                    const std::function<void(
+                       Error error,
                        const std::string &name,
                        FileType type,
-                       std::int64_t size)>
+                       FileSize size)>
                    callback) {
     WIN32_FIND_DATAA findData;
     auto pattern = path + "\\*";
@@ -177,8 +196,7 @@ void WalkDirectory(const std::string &path,
             continue;
         }
 
-        std::int64_t size =
-            (static_cast<std::int64_t>(findData.nFileSizeHigh) << 32)
+        FileSize size = (static_cast<FileSize>(findData.nFileSizeHigh) << 32)
             | findData.nFileSizeLow;
         FileType type;
         auto attributes = findData.dwFileAttributes;
@@ -201,11 +219,34 @@ void WalkDirectory(const std::string &path,
 
 void WalkDirectory(const std::string &path,
                    const std::function<void(
+                       Error error,
                        const std::string &name,
                        FileType type,
-                       std::int64_t size)>
+                       FileSize size)>
                    callback) {
+    auto dir = opendir(path.c_str());
+    if (dir == nullptr) {
+        auto error = Error(ErrorDomain::Errno, errno);
+        callback(error, path, FileType::File, 0);
+        return;
+    }
 
+    dirent *dirEntry;
+
+    while ((dirEntry = readdir(dir)) != nullptr) {
+        auto name = std::string(dirEntry->d_name);
+        if (name == "." || name == "..") {
+            continue;
+        }
+        Error error;
+        auto filePath = path + "/" + name;
+        auto fileInfo = GetFileInfo(filePath, error);
+        if (error) {
+            callback(error, name, FileType::File, 0);
+            return;
+        }
+        callback(Error::Success(), name, fileInfo.type, fileInfo.size);
+    }
 }
 
 #endif // _WIN32
@@ -218,14 +259,18 @@ void ReadFileTreeInternal(std::shared_ptr<FileNode> root,
     }
 
     WalkDirectory(rootPath,
-                  [root](const std::string &name,
+                  [root](Error error,
+                         const std::string &name,
                          FileType type,
-                         std::int64_t size) {
-        auto file = std::make_shared<FileNode>(type, std::string(name), size);
-        root->AddChildNode(file);
+                         FileSize size) {
+        if (!error) {
+            auto file =
+                std::make_shared<FileNode>(type, std::string(name), size);
+            root->AddChildNode(file);
+        }
     });
 
-    std::int64_t totalSize = 0;
+    FileSize totalSize = 0;
     root->ForEachChildNode([
         &totalSize,
         &root,
@@ -233,7 +278,7 @@ void ReadFileTreeInternal(std::shared_ptr<FileNode> root,
         &maxDepth
     ](std::shared_ptr<FileNode> node) {
         if (node->Type() == FileType::Directory) {
-            auto path = (rootPath + "\\") + node->Name();
+            auto path = (rootPath + DIR_SEPARATOR) + node->Name();
             ReadFileTreeInternal(node, path, maxDepth - 1);
         }
         totalSize += node->Size();
@@ -252,8 +297,8 @@ std::shared_ptr<FileNode> ReadFileTree(const std::string &path, int maxDepth) {
     return rootNode;
 }
 
-std::string FormatSize(std::int64_t size) {
-    static const std::vector<std::pair<std::int64_t, const char*>> units = {
+std::string FormatSize(FileSize size) {
+    static const std::vector<std::pair<FileSize, const char*>> units = {
         {1LL << 40, "TB"},
         {1LL << 30, "GB"},
         {1LL << 20, "MB"},
@@ -272,8 +317,8 @@ std::string FormatSize(std::int64_t size) {
     return std::to_string(size) + " bytes";
 }
 
-std::string FormtSizeMetric(std::int64_t size) {
-    static const std::vector<std::pair<std::int64_t, const char*>> units = {
+std::string FormtSizeMetric(FileSize size) {
+    static const std::vector<std::pair<FileSize, const char*>> units = {
         {1000000000000LL, "TB"},
         {1000000000LL, "GB"},
         {1000000LL, "MB"},

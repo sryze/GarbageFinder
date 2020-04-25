@@ -6,6 +6,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 project(GarbageFinder VERSION 0.1.0 LANGUAGES CXX)
 
 add_executable(GarbageFinder
+    FileInfo.h
     FileNode.cpp
     FileNode.h
     FileSystem.cpp

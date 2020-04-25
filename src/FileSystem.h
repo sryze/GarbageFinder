@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <limits>
 #include <string>
 
@@ -6,21 +7,20 @@
 
 namespace gf {
 
-enum class FileType;
-
 class Error;
 class FileNode;
 
 void GetMountedVolumes(std::vector<std::string>& volumes);
 bool GetVolumeFreeSpace(
-    const std::string &path, std::int64_t &free, std::int64_t &total);
+    const std::string &path, FileSize &free, FileSize &total);
 
+FileInfo GetFileInfo(const std::string &path, Error &error);
 FileType GetFileType(const std::string &path, Error &error);
 
 std::shared_ptr<FileNode> ReadFileTree(const std::string &path, int maxDepth);
 
-std::string FormatSize(std::int64_t size);
-std::string FormtSizeMetric(std::int64_t size);
+std::string FormatSize(FileSize size);
+std::string FormtSizeMetric(FileSize size);
 
 } // namespace gf
 

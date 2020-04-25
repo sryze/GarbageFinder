@@ -6,9 +6,11 @@ static const std::size_t MAX_ERROR_BUFFER = 256;
 
 namespace gf {
 
+Error Error::success;
+
 std::string Error::Message() const {
     switch (domain) {
-        case ErrorDomain::System:
+        case ErrorDomain::Errno:
             std::string buf;
             buf.reserve(MAX_ERROR_BUFFER);
             #ifdef _WIN32
