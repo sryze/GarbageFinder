@@ -278,7 +278,11 @@ void ReadFileTreeInternal(std::shared_ptr<FileNode> root,
         &maxDepth
     ](std::shared_ptr<FileNode> node) {
         if (node->Type() == FileType::Directory) {
-            auto path = (rootPath + DIR_SEPARATOR) + node->Name();
+            auto endsWithSeparator =
+                rootPath.find_last_of(DIR_SEPARATOR) == rootPath.length() - 1;
+            auto path = endsWithSeparator
+                ? rootPath + node->Name()
+                : rootPath + DIR_SEPARATOR + node->Name();
             ReadFileTreeInternal(node, path, maxDepth - 1);
         }
         totalSize += node->Size();
