@@ -143,18 +143,22 @@ FileInfo GetFileInfo(const std::string &path, Error &error) {
 
     if (S_ISDIR(fileStat.st_mode)) {
         fileInfo.type = FileType::Directory;
-    }
+    } else {
 #ifdef _WIN32
-    DWORD attributes = GetFileAttributesA(path.c_str());
-    if (attributes == INVALID_FILE_ATTRIBUTES) {
-        error = Error(ErrorDomain::Win32, GetLastError());
-        return fileInfo;
-    }
+        DWORD attributes = GetFileAttributesA(path.c_str());
+        if (attributes == INVALID_FILE_ATTRIBUTES) {
+            error = Error(ErrorDomain::Win32, GetLastError());
+            return fileInfo;
+        }
+        if ((attributes && FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+            fileInfo.type = FileType::Link;
+        }
 #else
-    if (S_ISLNK(fileStat.st_mode)) {
-        fileInfo.type =  FileType::Link;
-    }
+        if (S_ISLNK(fileStat.st_mode)) {
+            fileInfo.type =  FileType::Link;
+        }
 #endif
+    }
 
     fileInfo.size = static_cast<FileSize>(fileStat.st_size);
 
