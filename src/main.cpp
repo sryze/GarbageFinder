@@ -55,7 +55,7 @@ int main() {
             auto type = GetFileType(target, error);
             if (error) {
                 std::cout << "Error "
-                          << error.Code() << ": " + error.Message()
+                          << error.Code() << ": " + error.MessageOrDefault()
                           << std::endl;
                 continue;
             }

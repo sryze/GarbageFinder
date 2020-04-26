@@ -22,7 +22,7 @@ public:
     {}
 
     Error(ErrorDomain domain, int code):
-        domain(ErrorDomain::Unknown),
+        domain(domain),
         code(code)
     {}
 
@@ -43,6 +43,8 @@ public:
     }
 
     std::string Message() const;
+    std::string MessageOrDefault(
+        const std::string &defaultMessage = "Unknown error") const;
 
 private:
     ErrorDomain domain;
